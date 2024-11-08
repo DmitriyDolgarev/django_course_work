@@ -2,6 +2,16 @@
 import {computed, ref, onBeforeMount} from 'vue';
 import axios from "axios";
 import Cookies from 'js-cookie';
+import { storeToRefs } from 'pinia';
+import useUserProfileStore from '@/stores/UserProfileStore';
+
+const userProfileStore = useUserProfileStore();
+const {
+  is_auth, 
+  username, 
+  is_superuser
+} = storeToRefs(userProfileStore);
+
 
 onBeforeMount(() => {
   axios.defaults.headers.common['X-CSRFToken'] = Cookies.get("csrftoken");
@@ -16,8 +26,16 @@ const countries = ref([]);
 const carToAdd = ref({});
 const carToEdit = ref({});
 const carsPictureRef = ref();
+const carsPictureRefForEdit = ref();
 const carAddImageUrl = ref();
 const carEditImageUrl = ref();
+
+let isEnlargedImg = ref(false);
+let currentImgSrc = ref("");
+let box = ref();
+let img = ref();
+
+let usersToFilter = ref([]);
 
 async function fetchCars()
 {
@@ -33,7 +51,11 @@ async function fetchCars()
   body_types.value = r_body_types.data;
   countries.value = r_countries.data;
 
-  console.log(cars.value);
+  let users = cars.value.map(car => car.user);
+  users = users.filter(user => user != null);
+  usersToFilter = Array.from(new Set(users));
+
+  console.log(usersToFilter);
 }
 
 async function onLoadClick()
@@ -43,6 +65,9 @@ async function onLoadClick()
 
 onBeforeMount(async () => {
   await fetchCars();
+
+  console.log("username");
+  console.log(username);
 })
 
 async function onCarAdd() {
@@ -73,15 +98,14 @@ async function onRemoveClick(car) {
 async function onCarEditClick(car)
 {
   carToEdit.value = { ...car };
-  //carEditImageUrl.value = car.picture;
+  carEditImageUrl.value = car.picture;
 }
 
 async function onUpdateCar()
 {
-  /*
   const formDataToEdit = new FormData();
 
-  formDataToEdit.append('picture', carsPictureRef.value.files[0]);
+  formDataToEdit.append('picture', carsPictureRefForEdit.value.files[0]);
   formDataToEdit.set('model', carToEdit.value.model);
   formDataToEdit.set('mark_name', carToEdit.value.mark_name);
   formDataToEdit.set('car_class', carToEdit.value.car_class);
@@ -94,12 +118,13 @@ async function onUpdateCar()
       'Content-Type': 'multipart/form-data'
     }
   });
-  */
 
+  /*
   console.log(carToEdit.value);
   await axios.put(`/api/cars/${carToEdit.value.id}/`, {
     ...carToEdit.value,
   });
+  */
 
   await fetchCars();
 }
@@ -110,12 +135,28 @@ async function carsAddPictureChange()
 }
 async function carsEditPictureChange()
 {
-  carEditImageUrl.value = URL.createObjectURL(carsPictureRef.value.files[0]);
+  carEditImageUrl.value = URL.createObjectURL(carsPictureRefForEdit.value.files[0]);
+}
+
+function onImgClick(item)
+{
+  isEnlargedImg.value = true;
+  currentImgSrc.value = item.picture;
+}
+
+function onZoomBoxClick()
+{
+    isEnlargedImg.value = false;
 }
 
 </script>
 
 <template>
+  <Transition>
+  <div v-if="isEnlargedImg" id="zoomBox" class="zoomedBox" @click="onZoomBoxClick">
+    <img id="zoomedImg" :src="currentImgSrc" class="enlarged" alt="">
+  </div>
+</Transition>
 
   <!-- ТУТ ПОДКЛЮЧИЛ обработчик отправки формы -->
   <form @submit.prevent.stop="onCarAdd">
@@ -136,8 +177,7 @@ async function carsEditPictureChange()
           <!-- А ТУТ ПОДКЛЮЧИЛ К select -->
         <div class="form-floating">
           <select class="form-select" v-model="carToAdd.mark_name" required>
-            <option v-for="mark in marks" :value="mark.id">{{ mark.name }}</option>
-          </select>
+            <option v-for="mark in marks" :value="mark.id">{{ mark.name }}</option>          </select>
           <label for="floatingInput">Марка</label>
         </div>
       </div>
@@ -241,14 +281,12 @@ async function carsEditPictureChange()
                   <label for="floatingInput">Страна</label>
                 </div>
               </div>
-              <!--
               <div class="col-auto">
-                <input class="form-control" type="file" ref="carsPictureRef" @change="carsEditPictureChange">
+                <input class="form-control" type="file" ref="carsPictureRefForEdit" @change="carsEditPictureChange">
               </div>
               <div class="col-auto">
                 <img :src="carEditImageUrl" style="max-height: 60px" alt="">
               </div>
-              -->
             </div>
           </div>
           <div class="modal-footer">
@@ -272,9 +310,18 @@ async function carsEditPictureChange()
       </div>
     </div>
 
+    <div v-if="is_superuser" class="col-2 selectUser">
+      <div class="form-floating">
+        <select class="form-select">
+          <option :value="user" v-for="user in usersToFilter">{{ user }}</option>
+        </select>
+        <label for="floatingInput">Пользователь</label>
+      </div>
+    </div>
+
     <div v-for="item in cars" class="carItem">
       {{ item.mark_name.name }} {{ item.model }}
-      <div v-show="item.picture"><img :src="item.picture" style="max-height: 60px;" alt=""></div>
+      <div v-show="item.picture" @click="onImgClick(item)"><img :src="item.picture" class="usualImg" alt=""></div>
       <button
       type="button"
       class="btn btn-success"
@@ -295,17 +342,72 @@ async function carsEditPictureChange()
 
 <style scoped>
 
+.selectUser{
+  margin-top: 15px;
+}
+
+.itemImgBox{
+  border-radius: 15px;
+  cursor: pointer;
+}
+
 .carItem{
-  margin: 10px;
+  margin: 15px;
   padding: 5px 20px;
-  border: 1px solid black;
+  box-shadow: 10px 5px 5px rgba(128, 128, 128, 0.689);
   border-radius: 15px;
 
   display: grid;
-  grid-template-columns: 5fr 1fr 1fr 1fr;
+  grid-template-columns: 4fr 1fr 1fr 1fr;
   gap: 8px;
   align-items: center;
   justify-content: space-between;
+}
+.zoomedBox{
+  opacity: 1;
+  transform: scale(1, 1);
+  height: auto;
+
+  overflow: hidden;
+  display: flex;
+
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 0;
+  backdrop-filter: blur(3px);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+
+}
+.usualImg{
+  max-height: 90px;
+  border-radius: 15px;
+  cursor: pointer;
+}
+.large{
+  height: 250px;
+}
+.enlarged {
+  max-width: 100%;
+  z-index: 1000; /* Устанавливаем высокий z-index, чтобы изображение было поверх других элементов */
+}
+
+.enlarged img {
+  max-width: 100%; /* Масштабируем изображение, чтобы оно занимало всю доступную ширину */
+  max-height: 100%; /* Масштабируем изображение, чтобы оно занимало всю доступную высоту */
+}
+
+.v-enter-active,
+.v-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.v-enter-from,
+.v-leave-to {
+  opacity: 0;
 }
 
 </style>

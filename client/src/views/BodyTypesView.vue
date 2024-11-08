@@ -12,6 +12,11 @@ const body_types = ref([]);
 const body_typeToAdd = ref([]);
 const body_typeToEdit = ref([]);
 
+const bodyTypesPictureRef = ref();
+const bodyTypesPictureRefForEdit = ref();
+const bodyTypeAddImageUrl = ref();
+const bodyTypeEditImageUrl = ref();
+
 async function fetchBodyTypes()
 {
   const r_body_types = await axios.get("/api/body-types/");
@@ -26,25 +31,53 @@ onBeforeMount(async () => {
 })
 
 async function onBodyTypeAdd() {
-  console.log(body_typeToAdd.value);
-  await axios.post("/api/body-types/", {
-    ...body_typeToAdd.value,
+  const formData = new FormData();
+
+  formData.append('picture', bodyTypesPictureRef.value.files[0]);
+  formData.set('name', body_typeToAdd.value.name);
+
+  console.log(formData.value);
+
+  await axios.post("/api/body-types/", formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
   });
   
   await fetchBodyTypes(); // переподтягиваю
 }
 
+async function bodyTypesAddPictureChange()
+{
+  bodyTypeAddImageUrl.value = URL.createObjectURL(bodyTypesPictureRef.value.files[0]);
+}
+
+async function bodyTypesEditPictureChange()
+{
+  bodyTypeEditImageUrl.value = URL.createObjectURL(bodyTypesPictureRefForEdit.value.files[0]);
+}
+
 async function onBodyTypeEditClick(body_type)
 {
   body_typeToEdit.value = { ...body_type };
+  bodyTypeEditImageUrl.value = body_type.picture;
 }
 
 async function onBodyTypeUpdateClick()
 {
-  console.log(body_typeToEdit.value);
-  await axios.put(`/api/body-types/${body_typeToEdit.value.id}/`, {
-    ...body_typeToEdit.value,
+  const formData = new FormData();
+
+  formData.append('picture', bodyTypesPictureRefForEdit.value.files[0]);
+  formData.set('name', body_typeToEdit.value.name);
+
+  console.log(formData.value);
+
+  await axios.put(`/api/body-types/${body_typeToEdit.value.id}/`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
   });
+
   await fetchBodyTypes();
 }
 
@@ -60,15 +93,21 @@ async function onRemoveClick(body_type) {
 <form @submit.prevent.stop="onBodyTypeAdd">
     <div class="row">
         <div class="col">
-        <div class="form-floating">
-            <input
-            type="text"
-            class="form-control"
-            v-model="body_typeToAdd.name"
-            required
-            />
-            <label for="floatingInput">Тип кузова</label>
+          <div class="form-floating">
+              <input
+              type="text"
+              class="form-control"
+              v-model="body_typeToAdd.name"
+              required
+              />
+              <label for="floatingInput">Тип кузова</label>
+          </div>
         </div>
+        <div class="col-auto">
+          <input class="form-control" type="file" ref="bodyTypesPictureRef" @change="bodyTypesAddPictureChange">
+        </div>
+        <div class="col-auto">
+          <img :src="bodyTypeAddImageUrl" style="max-height: 60px" alt="">
         </div>
         <div class="col-1">
         <button class="btn btn-primary">
@@ -106,6 +145,12 @@ async function onRemoveClick(body_type) {
                 </div>
                 </div>
             </div>
+            <div class="col-auto">
+              <input class="form-control" type="file" ref="bodyTypesPictureRefForEdit" @change="bodyTypesEditPictureChange">
+            </div>
+            <div class="col-auto">
+              <img :src="bodyTypeEditImageUrl" style="max-height: 60px" alt="">
+            </div>
             <div class="modal-footer">
                 <button
                 type="button"
@@ -129,6 +174,7 @@ async function onRemoveClick(body_type) {
 
 <div v-for="item in body_types" class="item">
     {{ item.name }}
+    <div v-show="item.picture"><img :src="item.picture" style="max-height: 60px;" alt=""></div>
     <button class="btn btn-danger" @click="onRemoveClick(item)">
         Удалить
     </button>
@@ -154,7 +200,7 @@ async function onRemoveClick(body_type) {
   border-radius: 15px;
 
   display: grid;
-  grid-template-columns: 5fr 1fr 1fr;
+  grid-template-columns: 5fr 1fr 1fr 1fr;
   gap: 8px;
   align-items: center;
   justify-content: space-between;

@@ -23,6 +23,7 @@ class CountrySerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class CarSerializer(serializers.ModelSerializer):
+
     mark_name = MarkSerializer(read_only=True)
     car_class = CarClassSerializer(read_only=True)
     body_type = BodyTypeSerializer(read_only=True)
@@ -30,11 +31,19 @@ class CarSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Car
-        fields = ['id', 'model', 'mark_name', 'car_class', 'body_type', 'country', 'picture']
+        fields = ['id', 'model', 'mark_name', 'car_class', 'body_type', 'country', 'picture', 'user']
 
 
 
 class CarCreateSerializer(serializers.ModelSerializer):
+    def create(self, validated_data):
+        if 'request' in self.context:
+            # заполняем validated_data который используется для создания сущности в БД
+            # данными из запроса
+            validated_data['user'] = self.context['request'].user
+            
+        return super().create(validated_data)
+    
     class Meta:
         model = Car
         fields = ['id', 'model', 'mark_name', 'car_class', 'body_type', 'country', 'picture']

@@ -23,7 +23,7 @@ from cars import views
 
 from rest_framework.routers import DefaultRouter
 
-from cars.api import CarsViewset, MarksViewset, CarClassesViewset, BodyTypesViewset, CountriesViewset
+from cars.api import CarsViewset, MarksViewset, CarClassesViewset, BodyTypesViewset, CountriesViewset, UserProfileViewset
 
 router = DefaultRouter()
 router.register("cars", CarsViewset, basename="cars")
@@ -31,6 +31,7 @@ router.register("marks", MarksViewset, basename="marks")
 router.register("car-classes", CarClassesViewset, basename="car_classes")
 router.register("body-types", BodyTypesViewset, basename="body_types")
 router.register("countries", CountriesViewset, basename="countries")
+router.register("user", UserProfileViewset, basename="user")
 
 urlpatterns = [
     path('', views.ShowCarsView.as_view()), 

@@ -25,6 +25,8 @@ class Car(models.Model):
 
     picture = models.ImageField("Изображение", null=True, upload_to="cars")
 
+    user = models.ForeignKey("auth.User", verbose_name="Пользователь", on_delete=models.CASCADE, null=True)
+
     class Meta:
         verbose_name = "Автомобиль"
         verbose_name_plural = "Автомобили"
@@ -42,6 +44,8 @@ class CarClass(models.Model):
     
 class BodyType(models.Model):
     name = models.TextField("Тип кузова автомобиля")
+
+    picture = models.ImageField("Изображение", null=True, upload_to="bodyTypes")
 
     class Meta:
         verbose_name = "Тип кузова"

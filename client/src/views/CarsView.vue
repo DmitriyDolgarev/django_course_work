@@ -36,6 +36,9 @@ let box = ref();
 let img = ref();
 
 let usersToFilter = ref([]);
+let userToFilt = ref();
+
+const allUsers = "Все";
 
 async function fetchCars()
 {
@@ -51,9 +54,12 @@ async function fetchCars()
   body_types.value = r_body_types.data;
   countries.value = r_countries.data;
 
-  let users = cars.value.map(car => car.user);
+  let users = cars.value.map(car => car.username);
   users = users.filter(user => user != null);
   usersToFilter = Array.from(new Set(users));
+  usersToFilter.unshift(allUsers); 
+
+  //userToFilt = usersToFilter[0];
 
   console.log(usersToFilter);
 }
@@ -312,28 +318,65 @@ function onZoomBoxClick()
 
     <div v-if="is_superuser" class="col-2 selectUser">
       <div class="form-floating">
-        <select class="form-select">
+        <select class="form-select" v-model="userToFilt">
           <option :value="user" v-for="user in usersToFilter">{{ user }}</option>
         </select>
         <label for="floatingInput">Пользователь</label>
       </div>
     </div>
 
-    <div v-for="item in cars" class="carItem">
-      {{ item.mark_name.name }} {{ item.model }}
-      <div v-show="item.picture" @click="onImgClick(item)"><img :src="item.picture" class="usualImg" alt=""></div>
-      <button
-      type="button"
-      class="btn btn-success"
-      @click="onCarEditClick(item)"
-      data-bs-toggle="modal"
-      data-bs-target="#editCarModal"
-      >
-        Редактировать
-      </button>
-      <button class="btn btn-danger" @click="onRemoveClick(item)">
-        Удалить
-      </button>
+
+    <div v-if="userToFilt != allUsers">
+
+      <div v-for="item in cars">
+
+        <div v-if="item.username == userToFilt">
+
+          <div class="carItem">
+
+            {{ item.mark_name.name }} {{ item.model }}
+            <div v-show="item.picture" @click="onImgClick(item)"><img :src="item.picture" class="usualImg" alt=""></div>
+            <button
+            type="button"
+            class="btn btn-success"
+            @click="onCarEditClick(item)"
+            data-bs-toggle="modal"
+            data-bs-target="#editCarModal"
+            >
+              Редактировать
+            </button>
+            <button class="btn btn-danger" @click="onRemoveClick(item)">
+              Удалить
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+    <div v-else>
+
+      <div v-for="item in cars" class="carItem">
+
+        {{ item.mark_name.name }} {{ item.model }}
+        <div v-show="item.picture" @click="onImgClick(item)"><img :src="item.picture" class="usualImg" alt=""></div>
+        <button
+        type="button"
+        class="btn btn-success"
+        @click="onCarEditClick(item)"
+        data-bs-toggle="modal"
+        data-bs-target="#editCarModal"
+        >
+          Редактировать
+        </button>
+        <button class="btn btn-danger" @click="onRemoveClick(item)">
+          Удалить
+        </button>
+
+      </div>
+
     </div>
 
   </div>

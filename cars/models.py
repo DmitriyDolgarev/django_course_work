@@ -25,11 +25,17 @@ class Car(models.Model):
 
     picture = models.ImageField("Изображение", null=True, upload_to="cars")
 
-    user = models.ForeignKey("auth.User", verbose_name="Пользователь", on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey("auth.User", verbose_name="Пользователь", on_delete=models.CASCADE, null=True, related_name="user_id")
+
+    # username = models.ForeignKey("auth.User", verbose_name="Имя пользователя", on_delete=models.CASCADE, null=True, related_name="name")
 
     class Meta:
         verbose_name = "Автомобиль"
         verbose_name_plural = "Автомобили"
+
+    @property
+    def username(self):
+        return self.user.username if self.user else '-'
 
 
 class CarClass(models.Model):

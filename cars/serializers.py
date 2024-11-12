@@ -31,7 +31,7 @@ class CarSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Car
-        fields = ['id', 'model', 'mark_name', 'car_class', 'body_type', 'country', 'picture', 'user']
+        fields = ['id', 'model', 'mark_name', 'car_class', 'body_type', 'country', 'picture', 'user', 'username']
 
 
 
@@ -41,6 +41,7 @@ class CarCreateSerializer(serializers.ModelSerializer):
             # заполняем validated_data который используется для создания сущности в БД
             # данными из запроса
             validated_data['user'] = self.context['request'].user
+            # validated_data['username'] = self.context['request'].user.username
             
         return super().create(validated_data)
     

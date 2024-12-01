@@ -11,9 +11,20 @@ const marks = ref([]);
 const markToAdd = ref([]);
 const markToEdit = ref([]);
 
+let marksCount = ref();
+let mostPopularMark = ref();
+
 async function fetchMarks()
 {
   const r_marks = await axios.get("/api/marks/");
+  const r_stats = await axios.get("/api/cars/stats/");
+  const r_marks_stats = await axios.get("/api/marks/stats/");
+
+  let stats = r_stats.data;
+  mostPopularMark = stats.most_mark_name;
+
+  let marks_stats = r_marks_stats.data;
+  marksCount = marks_stats.count;
 
   marks.value = r_marks.data;
 
@@ -126,10 +137,24 @@ async function onRemoveClick(mark) {
             </div>
         </div>
 
+        <div class="stats">
+          <h3>Статистика</h3>
+          <div class="statsRow">
+            <div class="statsItem first">
+              <div class="statsHeader">{{ marksCount }}</div>
+              <h6>Количество марок</h6>
+            </div>
+            <div class="statsItem second">
+              <div class="statsHeader">{{ mostPopularMark }}</div>
+              <h6>Самая популярная марка</h6>
+            </div>
+          </div>
+        </div>
+
         <div v-for="item in marks" class="item">
             {{ item.name }}
             <button class="btn btn-danger" @click="onRemoveClick(item)">
-                Удалить
+              <i class="bi bi-x"></i>
             </button>
             <button
             type="button"
@@ -138,7 +163,7 @@ async function onRemoveClick(mark) {
             data-bs-toggle="modal"
             data-bs-target="#editMarkModal"
             >
-                Редактировать
+            <i class="bi bi-pen-fill"></i>
             </button>
         </div>
 
@@ -147,16 +172,49 @@ async function onRemoveClick(mark) {
 <style scoped>
 
 .item{
-  margin: 10px;
+  margin: 15px;
   padding: 5px 20px;
-  border: 1px solid black;
+  box-shadow: 10px 5px 5px rgba(128, 128, 128, 0.689);
   border-radius: 15px;
 
   display: grid;
-  grid-template-columns: 5fr 1fr 1fr;
+  grid-template-columns: 17fr 1fr 1fr;
   gap: 8px;
   align-items: center;
   justify-content: space-between;
+}
+
+.stats{
+  margin: 30px;
+}
+.statsRow{
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.statsItem{
+  margin: 20px;
+  padding: 40px;
+  border-radius: 15px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.first{
+  background-color: #FFF685;
+}
+.second{
+  background-color: #FFABD6;
+}
+.third{
+  background-color: #A0D2EB;
+}
+.statsHeader{
+  font-size: 40px;
+  font-weight: bold;
 }
 
 </style>

@@ -1,5 +1,5 @@
 <script setup>
-import {computed, ref, onBeforeMount} from 'vue';
+import {computed, ref, onBeforeMount, watch} from 'vue';
 import axios from "axios";
 import Cookies from 'js-cookie';
 import { storeToRefs } from 'pinia';
@@ -23,6 +23,13 @@ const car_classes = ref([]);
 const body_types = ref([]);
 const countries = ref([]);
 
+let carsList = ref([]);
+
+let marksFilt = ref([]);
+let car_classesFilt = ref([]);
+let body_typesFilt = ref([]);
+let countriesFilt = ref([]);
+
 const carToAdd = ref({});
 const carToEdit = ref({});
 const carsPictureRef = ref();
@@ -36,9 +43,57 @@ let box = ref();
 let img = ref();
 
 let usersToFilter = ref([]);
+const allUsers = "Все";
+
 let userToFilt = ref();
 
-const allUsers = "Все";
+let carsCount = ref();
+let mostPopularMark = ref();
+let mostPopularBodyType = ref();
+
+let markToFilter = ref();
+let classToFilter = ref();
+let bodyTypeToFilter = ref();
+let countryToFilter = ref();
+
+watch(markToFilter, () => {
+  filterCars();
+});
+watch(classToFilter, () => {
+  filterCars();
+});
+watch(bodyTypeToFilter, () => {
+  filterCars();
+});
+watch(countryToFilter, () => {
+  filterCars();
+});
+
+function filterCars()
+{
+  carsList = cars.value;
+  
+  if (markToFilter.value != allUsers && markToFilter.value != null)
+  {
+    carsList = carsList.filter(item => item.mark_name.name == markToFilter.value);
+  }
+  if (classToFilter.value != allUsers && classToFilter.value != null)
+  {
+    carsList = carsList.filter(item => item.car_class.name == classToFilter.value);
+  }
+  if (bodyTypeToFilter.value != allUsers && bodyTypeToFilter.value != null)
+  {
+    carsList = carsList.filter(item => item.body_type.name == bodyTypeToFilter.value);
+  }
+  if (countryToFilter.value != allUsers && countryToFilter.value != null)
+  {
+    carsList = carsList.filter(item => item.country.name == countryToFilter.value);
+  }
+
+  console.log("carsList");
+  console.log(carsList);
+  //carsList.value = arr.value;
+}
 
 async function fetchCars()
 {
@@ -48,11 +103,36 @@ async function fetchCars()
   const r_body_types = await axios.get("/api/body-types/");
   const r_countries = await axios.get("/api/countries/");
 
+  const r_stats = await axios.get("/api/cars/stats/");
+
   cars.value = r.data;
+  carsList.value = r.data;
+
   marks.value = r_marks.data;
   car_classes.value = r_classes.data;
   body_types.value = r_body_types.data;
   countries.value = r_countries.data;
+
+  marksFilt = r_marks.data.map(item => item.name);
+  car_classesFilt = r_classes.data.map(item => item.name);
+  body_typesFilt = r_body_types.data.map(item => item.name);
+  countriesFilt = r_countries.data.map(item => item.name);
+
+  marksFilt.unshift(allUsers);
+  car_classesFilt.unshift(allUsers);
+  body_typesFilt.unshift(allUsers);
+  countriesFilt.unshift(allUsers);
+
+  //markToFilter = marksFilt[0];
+  //classToFilter = car_classesFilt[0];
+  //bodyTypeToFilter = body_typesFilt[0];
+  //countryToFilter = countriesFilt[0];
+
+  let stats = r_stats.data;
+  carsCount = stats.count;
+  mostPopularMark = stats.most_mark_name;
+  mostPopularBodyType = stats.most_body_type;
+
 
   let users = cars.value.map(car => car.username);
   users = users.filter(user => user != null);
@@ -72,7 +152,10 @@ async function onLoadClick()
 onBeforeMount(async () => {
   await fetchCars();
 
-  console.log("username");
+  if (!is_superuser.value)
+  {
+    userToFilt = allUsers;
+  }
   console.log(username);
 })
 
@@ -316,67 +399,145 @@ function onZoomBoxClick()
       </div>
     </div>
 
-    <div v-if="is_superuser" class="col-2 selectUser">
-      <div class="form-floating">
-        <select class="form-select" v-model="userToFilt">
-          <option :value="user" v-for="user in usersToFilter">{{ user }}</option>
-        </select>
-        <label for="floatingInput">Пользователь</label>
+    <div class="stats">
+      <h3>Статистика</h3>
+      <div class="statsRow">
+        <div class="statsItem first">
+          <div class="statsHeader">{{ carsCount }}</div>
+          <h6>Количество автомобилей</h6>
+        </div>
+        <div class="statsItem second">
+          <div class="statsHeader">{{ mostPopularMark }}</div>
+          <h6>Самая популярная марка</h6>
+        </div>
+        <div class="statsItem third">
+          <div class="statsHeader">{{ mostPopularBodyType }}</div>
+          <h6>Самый популярный тип кузова</h6>
+        </div>
       </div>
     </div>
 
+    <div v-if="is_superuser">
+      <h3 class="filterHeader">Фильтрация по пользователю</h3>
+      <div class="col-2 selectUser">
+        <div class="form-floating">
+          <select class="form-select" v-model="userToFilt">
+            <option :value="user" v-for="user in usersToFilter">{{ user }}</option>
+          </select>
+          <label for="floatingInput">Пользователь</label>
+        </div>
+      </div>
+    </div>
 
-    <div v-if="userToFilt != allUsers">
+    <h3 class="filterHeader">Фильтрация</h3>
+    <div class="row">
+      <div class="col-2">
+        <div class="form-floating">
+          <select class="form-select" v-model="markToFilter" required>
+            <option v-for="mark in marksFilt" :value="mark">{{ mark }}</option>
+          </select>
+          <label for="floatingInput">Марка</label>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="form-floating">
+          <select class="form-select" v-model="classToFilter" required>
+            <option :value="cls" v-for="cls in car_classesFilt">{{ cls }}</option>
+          </select>
+          <label for="floatingInput">Класс</label>
+        </div>
+      </div>
+      <div class="col-2">
+        <div class="form-floating">
+          <select class="form-select" v-model="bodyTypeToFilter" required>
+            <option :value="types" v-for="types in body_typesFilt">{{ types }}</option>
+          </select>
+          <label for="floatingInput">Кузов</label>
+        </div>
+      </div>
+      <div class="col-2">
+        <div class="form-floating">
+          <select class="form-select" v-model="countryToFilter" required>
+            <option :value="country" v-for="country in countriesFilt">{{ country }}</option>
+          </select>
+          <label for="floatingInput">Страна</label>
+        </div>
+      </div>
+    </div>
 
-      <div v-for="item in cars">
+    <div v-if="!is_superuser">
+      <div v-for="item in carsList" class="carItem">
 
-        <div v-if="item.username == userToFilt">
+      {{ item.mark_name.name }} {{ item.model }}
+      <div v-show="item.picture" @click="onImgClick(item)"><img :src="item.picture" class="usualImg" alt=""></div>
+      <button
+      type="button"
+      class="btn btn-success"
+      @click="onCarEditClick(item)"
+      data-bs-toggle="modal"
+      data-bs-target="#editCarModal"
+      >
+        <i class="bi bi-pen-fill"></i>
+      </button>
+      <button class="btn btn-danger" @click="onRemoveClick(item)">
+        <i class="bi bi-x"></i>
+      </button>
 
-          <div class="carItem">
+      </div>
+    </div>
+    <div v-else>
+      <div v-if="userToFilt != allUsers">
 
-            {{ item.mark_name.name }} {{ item.model }}
-            <div v-show="item.picture" @click="onImgClick(item)"><img :src="item.picture" class="usualImg" alt=""></div>
-            <button
-            type="button"
-            class="btn btn-success"
-            @click="onCarEditClick(item)"
-            data-bs-toggle="modal"
-            data-bs-target="#editCarModal"
-            >
-              Редактировать
-            </button>
-            <button class="btn btn-danger" @click="onRemoveClick(item)">
-              Удалить
-            </button>
+        <div v-for="item in carsList">
+
+          <div v-if="item.username == userToFilt">
+
+            <div class="carItem">
+
+              {{ item.mark_name.name }} {{ item.model }}
+              <div v-show="item.picture" @click="onImgClick(item)"><img :src="item.picture" class="usualImg" alt=""></div>
+              <button
+              type="button"
+              class="btn btn-success"
+              @click="onCarEditClick(item)"
+              data-bs-toggle="modal"
+              data-bs-target="#editCarModal"
+              >
+                <i class="bi bi-pen-fill"></i>
+              </button>
+              <button class="btn btn-danger" @click="onRemoveClick(item)">
+                <i class="bi bi-x"></i>
+              </button>
+
+            </div>
 
           </div>
 
         </div>
 
       </div>
+      <div v-else>
 
-    </div>
-    <div v-else>
+        <div v-for="item in carsList" class="carItem">
 
-      <div v-for="item in cars" class="carItem">
+          {{ item.mark_name.name }} {{ item.model }}
+          <div v-show="item.picture" @click="onImgClick(item)"><img :src="item.picture" class="usualImg" alt=""></div>
+          <button
+          type="button"
+          class="btn btn-success"
+          @click="onCarEditClick(item)"
+          data-bs-toggle="modal"
+          data-bs-target="#editCarModal"
+          >
+            <i class="bi bi-pen-fill"></i>
+          </button>
+          <button class="btn btn-danger" @click="onRemoveClick(item)">
+            <i class="bi bi-x"></i>
+          </button>
 
-        {{ item.mark_name.name }} {{ item.model }}
-        <div v-show="item.picture" @click="onImgClick(item)"><img :src="item.picture" class="usualImg" alt=""></div>
-        <button
-        type="button"
-        class="btn btn-success"
-        @click="onCarEditClick(item)"
-        data-bs-toggle="modal"
-        data-bs-target="#editCarModal"
-        >
-          Редактировать
-        </button>
-        <button class="btn btn-danger" @click="onRemoveClick(item)">
-          Удалить
-        </button>
+        </div>
 
       </div>
-
     </div>
 
   </div>
@@ -384,6 +545,10 @@ function onZoomBoxClick()
 </template>
 
 <style scoped>
+
+.btn{
+  width: auto;
+}
 
 .selectUser{
   margin-top: 15px;
@@ -401,7 +566,7 @@ function onZoomBoxClick()
   border-radius: 15px;
 
   display: grid;
-  grid-template-columns: 4fr 1fr 1fr 1fr;
+  grid-template-columns: 14fr 4fr 1fr 1fr;
   gap: 8px;
   align-items: center;
   justify-content: space-between;
@@ -443,6 +608,43 @@ function onZoomBoxClick()
   max-height: 100%; /* Масштабируем изображение, чтобы оно занимало всю доступную высоту */
 }
 
+.stats{
+  margin: 30px;
+}
+.statsRow{
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.statsItem{
+  margin: 20px;
+  padding: 40px;
+  border-radius: 15px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.first{
+  background-color: #FFF685;
+}
+.second{
+  background-color: #FFABD6;
+}
+.third{
+  background-color: #A0D2EB;
+}
+.statsHeader{
+  font-size: 40px;
+  font-weight: bold;
+}
+
+.filterHeader{
+  margin: 30px;
+}
+
 .v-enter-active,
 .v-leave-active {
   transition: opacity 0.5s ease;
@@ -452,5 +654,4 @@ function onZoomBoxClick()
 .v-leave-to {
   opacity: 0;
 }
-
 </style>

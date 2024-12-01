@@ -12,9 +12,21 @@ const countries = ref([]);
 const countryToAdd = ref([]);
 const countryToEdit = ref([]);
 
+let countriesCount = ref();
+let mostPopularCountry = ref();
+
 async function fetchCountries()
 {
   const r_countries = await axios.get("/api/countries/");
+  const r_stats = await axios.get("/api/cars/stats/");
+  const r_countries_stats = await axios.get("/api/countries/stats/");
+
+  let stats = r_stats.data;
+  mostPopularCountry = stats.most_country;
+
+  let countries_stats = r_countries_stats.data;
+  countriesCount = countries_stats.count;
+
 
   countries.value = r_countries.data;
 
@@ -67,7 +79,7 @@ async function onRemoveClick(country) {
             v-model="countryToAdd.name"
             required
             />
-            <label for="floatingInput">Марка</label>
+            <label for="floatingInput">Страна</label>
         </div>
         </div>
         <div class="col-1">
@@ -127,10 +139,24 @@ async function onRemoveClick(country) {
     </div>
 </div>
 
+<div class="stats">
+  <h3>Статистика</h3>
+  <div class="statsRow">
+    <div class="statsItem first">
+      <div class="statsHeader">{{ countriesCount }}</div>
+      <h6>Количество стран</h6>
+    </div>
+    <div class="statsItem second">
+      <div class="statsHeader">{{ mostPopularCountry }}</div>
+      <h6>Самая популярная страна</h6>
+    </div>
+  </div>
+</div>
+
 <div v-for="item in countries" class="item">
     {{ item.name }}
     <button class="btn btn-danger" @click="onRemoveClick(item)">
-        Удалить
+      <i class="bi bi-x"></i>
     </button>
     <button
     type="button"
@@ -139,7 +165,7 @@ async function onRemoveClick(country) {
     data-bs-toggle="modal"
     data-bs-target="#editMarkModal"
     >
-        Редактировать
+    <i class="bi bi-pen-fill"></i>
     </button>
 </div>
 
@@ -148,16 +174,49 @@ async function onRemoveClick(country) {
 <style scoped>
 
 .item{
-  margin: 10px;
+  margin: 15px;
   padding: 5px 20px;
-  border: 1px solid black;
+  box-shadow: 10px 5px 5px rgba(128, 128, 128, 0.689);
   border-radius: 15px;
 
   display: grid;
-  grid-template-columns: 5fr 1fr 1fr;
+  grid-template-columns: 17fr 1fr 1fr;
   gap: 8px;
   align-items: center;
   justify-content: space-between;
+}
+
+.stats{
+  margin: 30px;
+}
+.statsRow{
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.statsItem{
+  margin: 20px;
+  padding: 40px;
+  border-radius: 15px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.first{
+  background-color: #FFF685;
+}
+.second{
+  background-color: #FFABD6;
+}
+.third{
+  background-color: #A0D2EB;
+}
+.statsHeader{
+  font-size: 40px;
+  font-weight: bold;
 }
 
 </style>

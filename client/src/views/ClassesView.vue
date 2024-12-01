@@ -12,9 +12,21 @@ const classes = ref([]);
 const classToAdd = ref([]);
 const classToEdit = ref([]);
 
+let classesCount = ref();
+let mostPopularClass = ref();
+
 async function fetchClasses()
 {
   const r_classes = await axios.get("/api/car-classes/");
+  const r_stats = await axios.get("/api/cars/stats/");
+  const r_classes_stats = await axios.get("/api/car-classes/stats/");
+
+  let stats = r_stats.data;
+  let text = stats.most_class;
+  mostPopularClass = text[0];
+
+  let classes_stats = r_classes_stats.data;
+  classesCount = classes_stats.count;
 
   classes.value = r_classes.data;
 
@@ -127,10 +139,24 @@ async function onRemoveClick(clas) {
     </div>
 </div>
 
+<div class="stats">
+  <h3>Статистика</h3>
+  <div class="statsRow">
+    <div class="statsItem first">
+      <div class="statsHeader">{{ classesCount }}</div>
+      <h6>Количество классов</h6>
+    </div>
+    <div class="statsItem second">
+      <div class="statsHeader">{{ mostPopularClass }}</div>
+      <h6>Самый популярный класс</h6>
+    </div>
+  </div>
+</div>
+
 <div v-for="item in classes" class="item">
     {{ item.name }}
     <button class="btn btn-danger" @click="onRemoveClick(item)">
-        Удалить
+      <i class="bi bi-x"></i>
     </button>
     <button
     type="button"
@@ -139,7 +165,7 @@ async function onRemoveClick(clas) {
     data-bs-toggle="modal"
     data-bs-target="#editMarkModal"
     >
-        Редактировать
+    <i class="bi bi-pen-fill"></i>
     </button>
 </div>
 
@@ -148,16 +174,49 @@ async function onRemoveClick(clas) {
 <style scoped>
 
 .item{
-  margin: 10px;
+  margin: 15px;
   padding: 5px 20px;
-  border: 1px solid black;
+  box-shadow: 10px 5px 5px rgba(128, 128, 128, 0.689);
   border-radius: 15px;
 
   display: grid;
-  grid-template-columns: 5fr 1fr 1fr;
+  grid-template-columns: 17fr 1fr 1fr;
   gap: 8px;
   align-items: center;
   justify-content: space-between;
+}
+
+.stats{
+  margin: 30px;
+}
+.statsRow{
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.statsItem{
+  margin: 20px;
+  padding: 40px;
+  border-radius: 15px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.first{
+  background-color: #FFF685;
+}
+.second{
+  background-color: #FFABD6;
+}
+.third{
+  background-color: #A0D2EB;
+}
+.statsHeader{
+  font-size: 40px;
+  font-weight: bold;
 }
 
 </style>

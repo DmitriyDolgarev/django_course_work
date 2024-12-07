@@ -1,5 +1,6 @@
 <script setup>
-
+import useUserProfileStore from '@/stores/UserProfileStore'
+const userPorfileStore = useUserProfileStore()
 </script>
 
 <template>
@@ -36,6 +37,9 @@
               Пользователь
             </a>
             <ul class="dropdown-menu">
+              <li>
+                <router-link class="dropdown-item" to="/userPage">Личный кабинет</router-link>
+              </li>
               <li><a class="dropdown-item" href="/admin">Админка</a></li>
             </ul>
           </li>

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from cars.models import Car, Mark, CarClass, BodyType, Country
+from cars.models import Car, Mark, CarClass, BodyType, Country, UserPhoto
 
 class MarkSerializer(serializers.ModelSerializer):
     class Meta:
@@ -48,3 +48,8 @@ class CarCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Car
         fields = ['id', 'model', 'mark_name', 'car_class', 'body_type', 'country', 'picture']
+
+class UserPhotoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserPhoto
+        fields = "__all__"

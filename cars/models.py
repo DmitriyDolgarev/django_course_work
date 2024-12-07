@@ -69,3 +69,14 @@ class Country(models.Model):
 
     def __str__(self) -> str:
         return self.name
+    
+class UserPhoto(models.Model):
+    username = models.TextField("Имя пользователя")
+    picture = models.ImageField("Изображение", null=True, upload_to="usersPhoto")
+
+    class Meta:
+        verbose_name = "Фотография пользователя"
+        verbose_name_plural = "Фотографии пользователей"
+
+    def __str__(self) -> str:
+        return self.username

@@ -4,10 +4,11 @@ from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from cars.models import Car, Mark, CarClass, BodyType, Country
-from cars.serializers import CarCreateSerializer, CarSerializer, MarkSerializer, CarClassSerializer, BodyTypeSerializer, CountrySerializer
+from cars.models import Car, Mark, CarClass, BodyType, Country, UserPhoto
+from cars.serializers import CarCreateSerializer, CarSerializer, MarkSerializer, CarClassSerializer, BodyTypeSerializer, CountrySerializer, UserPhotoSerializer
 from django.db.models import Avg, Count, Max, Min
 from rest_framework import serializers
+from django.contrib.auth import authenticate, login
 
 class CarsViewset(
     mixins.CreateModelMixin, 
@@ -202,3 +203,27 @@ class UserProfileViewset(GenericViewSet):
                 "name": user.username
             })
         return Response(data)
+    
+    @action(url_path="login", detail=False, methods=["POST"])
+    def login(self, request, *args, **kwargs):
+        user = authenticate(username=self.request.data['username'], password=self.request.data['password'])
+        success = False
+        if user is not None:
+            login(request, user)
+            success  = True
+
+        return Response({
+            "success": success 
+        })
+    
+class UsersPhotoViewset(
+    mixins.CreateModelMixin, 
+    mixins.UpdateModelMixin, 
+    mixins.RetrieveModelMixin, 
+    mixins.ListModelMixin, 
+    mixins.DestroyModelMixin, 
+    GenericViewSet
+    ):
+
+    queryset = UserPhoto.objects.all()
+    serializer_class = UserPhotoSerializer

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from cars.models import Car, Mark, CarClass, BodyType, Country
+from cars.models import Car, Mark, CarClass, BodyType, Country, UserPhoto
 
 # Register your models here.
 @admin.register(Car)
@@ -22,3 +22,7 @@ class BodyTypeAdmin(admin.ModelAdmin):
 @admin.register(Country)
 class BodyTypeAdmin(admin.ModelAdmin):
     list_display = ['id', 'name']
+
+@admin.register(UserPhoto)
+class BodyTypeAdmin(admin.ModelAdmin):
+    list_display = ['id', 'username', 'picture']

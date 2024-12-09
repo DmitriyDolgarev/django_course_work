@@ -68,11 +68,18 @@ watch(bodyTypeToFilter, () => {
 watch(countryToFilter, () => {
   filterCars();
 });
+watch(userToFilt, () => {
+  filterCars();
+})
 
 function filterCars()
 {
   carsList = cars.value;
   
+  if (userToFilt.value != allUsers && userToFilt.value != null)
+  {
+    carsList = carsList.filter(item => item.username == userToFilt.value);
+  }
   if (markToFilter.value != allUsers && markToFilter.value != null)
   {
     carsList = carsList.filter(item => item.mark_name.name == markToFilter.value);
@@ -237,6 +244,21 @@ function onZoomBoxClick()
 {
     isEnlargedImg.value = false;
 }
+
+const exportData = async (format) => {
+  const url = `/api/cars/export-${format}/`;
+  try {
+    const response = await axios.get(url, { responseType: "blob" });
+    const blob = new Blob([response.data]);
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `cars.${format === "excel" ? "xlsx" : "docx"}`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  } catch (error) {
+    console.error("Ошибка при экспорте данных:", error);
+  }
+};
 
 </script>
 
@@ -465,8 +487,22 @@ function onZoomBoxClick()
       </div>
     </div>
 
-    <div v-if="!is_superuser">
-      <div v-for="item in carsList" class="carItem">
+    <div class="buttonsRow">
+      <button 
+        type="button"
+        class="btn btn-success excelBtn"
+        @click="exportData('excel')">
+        <i class="bi bi-file-earmark-spreadsheet"></i>
+      </button>
+      <button 
+        type="button"
+        class="btn btn-primary excelBtn"
+        @click="exportData('word')">
+        <i class="bi bi-file-word"></i>
+      </button>
+    </div>
+
+    <div v-for="item in carsList" class="carItem">
 
       {{ item.mark_name.name }} {{ item.model }}
       <div v-show="item.picture" @click="onImgClick(item)"><img :src="item.picture" class="usualImg" alt=""></div>
@@ -483,61 +519,6 @@ function onZoomBoxClick()
         <i class="bi bi-x"></i>
       </button>
 
-      </div>
-    </div>
-    <div v-else>
-      <div v-if="userToFilt != allUsers">
-
-        <div v-for="item in carsList">
-
-          <div v-if="item.username == userToFilt">
-
-            <div class="carItem">
-
-              {{ item.mark_name.name }} {{ item.model }}
-              <div v-show="item.picture" @click="onImgClick(item)"><img :src="item.picture" class="usualImg" alt=""></div>
-              <button
-              type="button"
-              class="btn btn-success"
-              @click="onCarEditClick(item)"
-              data-bs-toggle="modal"
-              data-bs-target="#editCarModal"
-              >
-                <i class="bi bi-pen-fill"></i>
-              </button>
-              <button class="btn btn-danger" @click="onRemoveClick(item)">
-                <i class="bi bi-x"></i>
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-      <div v-else>
-
-        <div v-for="item in carsList" class="carItem">
-
-          {{ item.mark_name.name }} {{ item.model }}
-          <div v-show="item.picture" @click="onImgClick(item)"><img :src="item.picture" class="usualImg" alt=""></div>
-          <button
-          type="button"
-          class="btn btn-success"
-          @click="onCarEditClick(item)"
-          data-bs-toggle="modal"
-          data-bs-target="#editCarModal"
-          >
-            <i class="bi bi-pen-fill"></i>
-          </button>
-          <button class="btn btn-danger" @click="onRemoveClick(item)">
-            <i class="bi bi-x"></i>
-          </button>
-
-        </div>
-
-      </div>
     </div>
 
   </div>
@@ -545,6 +526,15 @@ function onZoomBoxClick()
 </template>
 
 <style scoped>
+
+.buttonsRow{
+  width: 100px;
+  margin: 30px;
+  display: flex;
+  flex-direction: row;
+
+  justify-content: space-between;
+}
 
 .btn{
   width: auto;
@@ -570,6 +560,10 @@ function onZoomBoxClick()
   gap: 8px;
   align-items: center;
   justify-content: space-between;
+}
+.excelBtn{
+  width: 40px;
+  height: 40px;
 }
 .zoomedBox{
   opacity: 1;

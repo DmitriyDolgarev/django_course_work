@@ -10,6 +10,11 @@ from django.db.models import Avg, Count, Max, Min
 from rest_framework import serializers
 from django.contrib.auth import authenticate, login
 
+import openpyxl
+from io import BytesIO
+from docx import Document
+from django.http import HttpResponse
+
 class CarsViewset(
     mixins.CreateModelMixin, 
     mixins.UpdateModelMixin, 
@@ -85,6 +90,74 @@ class CarsViewset(
         serializer = self.StatsSerializer(instance = stats)
 
         return Response(serializer.data)
+    
+    @action(detail=False, methods=["GET"], url_path="export-excel")
+    def export_to_excel(self, request):
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Cars"
+
+        headers = ["ID", "Model", "Mark", "CarClass", "BodyType", "Country"]
+        ws.append(headers)
+
+        cars = Car.objects.all()
+
+        user = request.user
+        if user.is_superuser == False:
+            cars = list(filter(lambda car: car.username == user.username, cars))
+
+
+        for car in cars:
+            ws.append([
+                car.id,
+                car.model,
+                car.mark_name.name,
+                car.car_class.name,
+                car.body_type.name,
+                car.country.name
+            ])
+
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        response = HttpResponse(output, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response["Content-Disposition"] = 'attachment; filename="cars.xlsx"'
+        return response
+
+    @action(detail=False, methods=["GET"], url_path="export-word")
+    def export_to_word(self, request):
+        doc = Document()
+        doc.add_heading("Cars", level=1)
+
+        table = doc.add_table(rows=1, cols=6)
+        headers = ["ID", "Model", "Mark", "CarClass", "BodyType", "Country"]
+        hdr_cells = table.rows[0].cells
+        for i, header in enumerate(headers):
+            hdr_cells[i].text = header
+
+        cars = Car.objects.all()
+
+        user = request.user
+        if user.is_superuser == False:
+            cars = list(filter(lambda car: car.username == user.username, cars))
+            
+        for car in cars:
+            row_cells = table.add_row().cells
+            row_cells[0].text = str(car.id)
+            row_cells[1].text = car.model
+            row_cells[2].text = car.mark_name.name
+            row_cells[3].text = car.car_class.name
+            row_cells[4].text = car.body_type.name
+            row_cells[5].text = car.country.name
+
+        output = BytesIO()
+        doc.save(output)
+        output.seek(0)
+
+        response = HttpResponse(output, content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        response["Content-Disposition"] = 'attachment; filename="cars.docx"'
+        return response
 
 class MarksViewset(
     mixins.CreateModelMixin, 
